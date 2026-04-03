@@ -12,3 +12,10 @@ CLIENT = os.getenv("CLIENT", "clinica-estetica")
 EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "http://localhost:8080")
 EVOLUTION_API_KEY = os.getenv("EVOLUTION_API_KEY", "minha-chave-secreta")
 EVOLUTION_INSTANCE = os.getenv("EVOLUTION_INSTANCE", "clinica-estetica")
+
+# ── Redis (broker Celery) ─────────────────────────────
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+# ── PostgreSQL (memória do agente — Fase 3) ───────────
+# Vazio em dev → usa SQLite. Preenchido em produção → usa PostgreSQL.
+POSTGRES_URL = os.getenv("POSTGRES_URL", "")

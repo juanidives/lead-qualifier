@@ -1,8 +1,20 @@
 from agno.agent import Agent
-from agno.db.sqlite import SqliteDb
 from agno.models.openai import OpenAIChat
-from app.config import OPENAI_API_KEY, OPENAI_MODEL
+from app.config import OPENAI_API_KEY, OPENAI_MODEL, POSTGRES_URL
 from app.company_config import config
+
+# ── Banco de dados para memória do agente ─────────────────────────
+# Em desenvolvimento (POSTGRES_URL vazio): usa SQLite local
+# Em produção: usa PostgreSQL com pgvector
+if POSTGRES_URL:
+    from agno.db.postgres import PostgresDb
+    agent_db = PostgresDb(
+        db_url=POSTGRES_URL,
+        table_name="agent_sessions",
+    )
+else:
+    from agno.db.sqlite import SqliteDb
+    agent_db = SqliteDb(db_file="sofia.db")
 
 
 def _build_services_list(services: list) -> str:
@@ -53,7 +65,7 @@ SYSTEM_PROMPT = _build_system_prompt(config)
 sofia = Agent(
     name=config["agent_name"],
     model=OpenAIChat(id=OPENAI_MODEL, api_key=OPENAI_API_KEY),
-    db=SqliteDb(db_file="sofia.db"),
+    db=agent_db,
     description=SYSTEM_PROMPT,
     add_history_to_context=True,
     num_history_runs=20,

@@ -3,19 +3,21 @@ whatsapp_router.py
 ------------------
 Webhook da Evolution API v2.
 
-Fluxo:
+Fluxo COM Celery (assíncrono):
   1. Evolution API recebe mensagem do WhatsApp
   2. POST /webhook/whatsapp com o payload
-  3. Extraímos remetente + texto
-  4. Chamamos a Sofia usando o número como session_id (garante memória por contato)
-  5. Enviamos a resposta de volta via evolution_service
+  3. FastAPI extrai phone + texto
+  4. FastAPI enfileira a tarefa no Redis (.delay) → responde 200 IMEDIATAMENTE
+  5. Celery Worker processa em background: chama Sofia → envia resposta
+
+Vantagem: o webhook nunca trava nem dá timeout, independente de quanto
+a OpenAI demore para responder.
 """
 
 import logging
 from fastapi import APIRouter, Request, HTTPException
 
-from app.agent import sofia
-from app.services.evolution_service import send_text_message, strip_markdown
+from app.workers.tasks import process_whatsapp_message
 
 logger = logging.getLogger(__name__)
 
@@ -94,21 +96,13 @@ async def whatsapp_webhook(request: Request):
     push_name = data.get("pushName", "")
     logger.info(f"[WhatsApp] {push_name} ({phone}): {text[:80]}")
 
-    # ─── Chama o agente Sofia ───────────────────────────────
-    # Usa o número de telefone como session_id → memória persistente por contato
-    try:
-        response = sofia.run(text, session_id=phone)
-        reply_text = strip_markdown(response.content)
-    except Exception as e:
-        logger.exception(f"[WhatsApp] Erro ao processar mensagem de {phone}")
-        return {"status": "error", "detail": str(e)}
+    # ─── Enfileira a tarefa no Celery ──────────────────────
+    # .delay() retorna imediatamente — o processamento acontece em background
+    process_whatsapp_message.delay(
+        phone=phone,
+        text=text,
+        push_name=push_name,
+    )
 
-    # ─── Envia resposta via Evolution API ──────────────────
-    try:
-        send_text_message(phone=phone, text=reply_text)
-        logger.info(f"[WhatsApp] Resposta enviada para {phone}")
-    except Exception as e:
-        logger.exception(f"[WhatsApp] Erro ao enviar resposta para {phone}")
-        return {"status": "error", "detail": f"Falha ao enviar mensagem: {e}"}
-
-    return {"status": "ok", "phone": phone}
+    # Responde 200 imediatamente — a Evolution API não fica esperando
+    return {"status": "queued", "phone": phone}

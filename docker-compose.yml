@@ -4,7 +4,8 @@ services:
   #              (também usado pelo backend na Fase 3)
   # ─────────────────────────────────────────────
   postgres:
-    image: postgres:16-alpine
+    # pgvector/pgvector inclui a extensão vector para busca semântica (Fase 3+)
+    image: pgvector/pgvector:pg16
     container_name: postgres
     restart: unless-stopped
     ports:
@@ -15,6 +16,8 @@ services:
       POSTGRES_DB: evolution
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Script de inicialização: cria banco leadqualifier + habilita pgvector
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U evolution"]
       interval: 5s
@@ -50,6 +53,31 @@ services:
         condition: service_started
     volumes:
       - evolution_instances:/evolution/instances
+
+  # ─────────────────────────────────────────────
+  # Celery Worker — processa mensagens WhatsApp
+  # em background (chama Sofia + envia resposta)
+  # Para rodar: docker compose up celery-worker
+  # Ou em dev local: celery -A app.workers.celery_app worker --loglevel=info
+  # ─────────────────────────────────────────────
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: celery-worker
+    restart: unless-stopped
+    working_dir: /app
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=4
+    env_file:
+      - ./backend/.env
+    environment:
+      REDIS_URL: "redis://redis:6379/0"
+      EVOLUTION_API_URL: "http://evolution-api:8080"
+    depends_on:
+      - redis
+      - evolution-api
+    profiles:
+      - production  # só sobe com: docker compose --profile production up
 
   # ─────────────────────────────────────────────
   # Redis — cache de sessões WhatsApp
