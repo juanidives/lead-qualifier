@@ -19,3 +19,10 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 # ── PostgreSQL (memória do agente — Fase 3) ───────────
 # Vazio em dev → usa SQLite. Preenchido em produção → usa PostgreSQL.
 POSTGRES_URL = os.getenv("POSTGRES_URL", "")
+
+# ── Mercado Pago (pagamentos) ─────────────────────────────────────
+MERCADOPAGO_ACCESS_TOKEN = os.getenv("MERCADOPAGO_ACCESS_TOKEN", "")
+MERCADOPAGO_WEBHOOK_SECRET = os.getenv("MERCADOPAGO_WEBHOOK_SECRET", "")
+
+# ── Informações do Negócio ────────────────────────────────────────
+OWNER_PHONE = os.getenv("OWNER_PHONE", "")

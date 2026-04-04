@@ -71,3 +71,34 @@ def process_whatsapp_message(self, phone: str, text: str, push_name: str = ""):
         raise self.retry(exc=exc, countdown=2 ** self.request.retries)
 
     return {"phone": phone, "status": "sent"}
+
+
+@celery_app.task(
+    bind=True,
+    max_retries=2,
+    name="tasks.send_audio_autoresponse",
+)
+def send_audio_autoresponse(self, phone: str):
+    """
+    Envia auto-resposta quando o usuário manda áudio.
+
+    Não transcrevemos áudio — pedimos que o usuário escreva.
+    Mensagem em espanhol argentino.
+
+    Args:
+        phone: número do contato
+    """
+    message = (
+        "Che, estoy con la señal cortada y no me llega bien el audio 😅\n"
+        "¿Por favor, me mandás por escrito lo que necesitás?"
+    )
+
+    logger.info(f"[Celery] Enviando auto-resposta de áudio para {phone}")
+
+    try:
+        send_text_message(phone=phone, text=message)
+        logger.info(f"[Celery] Auto-resposta de áudio enviada para {phone}")
+        return {"phone": phone, "status": "audio_response_sent"}
+    except Exception as exc:
+        logger.exception(f"[Celery] Erro ao enviar auto-resposta de áudio para {phone}")
+        raise self.retry(exc=exc, countdown=2 ** self.request.retries)

@@ -1,0 +1,118 @@
+company_name: "JB Bebidas"
+agent_name: "Juani"
+niche: "distribuidora de bebidas"
+language: "es_AR"
+working_hours: "lunes a jueves de 9h a 20h, viernes a domingo de 9h a 22h"
+out_of_hours_message: "Ey! Por ahora estamos cerrados, pero mañana a las 9 te atendemos de una 🍻 Dejame tu mensaje y te respondo en cuanto abramos."
+tone: "descontraído, masculino, amigable, vendedor natural"
+owner_phone: "5491100000000"
+min_order: "$3000 ARS"
+delivery_policy: "Entrega en CABA y GBA en 24-48hs. Gratis superando $5000 ARS. Retiro en depósito sin costo."
+
+products:
+  - product_name: "Quilmes Clásica 1L"
+    category: "beer"
+    price: 850
+    cost_price: 520
+    alcohol: true
+    stock_quantity: 200
+    is_available: true
+    description: "La cerveza rubia más querida de Argentina. Refrescante y suave, ideal para cualquier momento."
+    upselling: ["Maní con chocolate", "Fernet Branca 750ml"]
+
+  - product_name: "Corona Extra 355ml"
+    category: "beer"
+    price: 1200
+    cost_price: 780
+    alcohol: true
+    stock_quantity: 150
+    is_available: true
+    description: "Cerveza premium mexicana, liviana y refrescante. Perfecta con un gajo de limón."
+    upselling: ["Quilmes Clásica 1L", "Aperol 700ml"]
+
+  - product_name: "Fernet Branca 750ml"
+    category: "spirit"
+    price: 4500
+    cost_price: 3100
+    alcohol: true
+    stock_quantity: 80
+    is_available: true
+    description: "El amargo italiano favorito de los argentinos. Imprescindible para el clásico Fernet con Coca."
+    upselling: ["Coca-Cola 1.5L", "Quilmes Clásica 1L"]
+
+  - product_name: "Aperol 700ml"
+    category: "aperitive"
+    price: 5200
+    cost_price: 3600
+    alcohol: true
+    stock_quantity: 60
+    is_available: true
+    description: "El aperitivo italiano de moda. Base del Aperol Spritz, dulce y amargo a la vez."
+    upselling: ["Chandon Extra Brut 750ml", "Soda Schweppes 1.5L"]
+
+  - product_name: "Chandon Extra Brut 750ml"
+    category: "wine"
+    price: 6800
+    cost_price: 4800
+    alcohol: true
+    stock_quantity: 40
+    is_available: true
+    description: "El espumante argentino por excelencia. Elegante y fresco, ideal para brindar en cualquier ocasión."
+    upselling: ["Aperol 700ml", "Copa de plástico premium x6"]
+
+  - product_name: "Malbec Rutini 750ml"
+    category: "wine"
+    price: 8500
+    cost_price: 5900
+    alcohol: true
+    stock_quantity: 35
+    is_available: true
+    description: "Malbec mendocino de alta gama. Robusto, con notas a frutas rojas y madera. Ideal para una cena especial."
+    upselling: ["Chandon Extra Brut 750ml", "Fernet Branca 750ml"]
+
+  - product_name: "Vodka Smirnoff 750ml"
+    category: "spirit"
+    price: 4200
+    cost_price: 2900
+    alcohol: true
+    stock_quantity: 70
+    is_available: true
+    description: "El vodka más vendido del mundo. Suave y versátil, base de los mejores tragos."
+    upselling: ["Jugo Tang x6 sobres", "Coca-Cola 1.5L"]
+
+  - product_name: "Coca-Cola 1.5L"
+    category: "non_alcoholic"
+    price: 650
+    cost_price: 380
+    alcohol: false
+    stock_quantity: 300
+    is_available: true
+    description: "La gaseosa clásica. Imprescindible para acompañar cualquier bebida alcohólica."
+    upselling: ["Fernet Branca 750ml", "Vodka Smirnoff 750ml"]
+
+  - product_name: "Soda Schweppes 1.5L"
+    category: "non_alcoholic"
+    price: 550
+    cost_price: 320
+    alcohol: false
+    stock_quantity: 250
+    is_available: true
+    description: "Soda premium, ideal para Aperol Spritz, fernet o para tomar sola bien fría."
+    upselling: ["Aperol 700ml", "Fernet Branca 750ml"]
+
+  - product_name: "Six Pack Quilmes Lata 473ml"
+    category: "beer"
+    price: 3800
+    cost_price: 2600
+    alcohol: true
+    stock_quantity: 100
+    is_available: true
+    description: "Seis latas de Quilmes para compartir. La opción más práctica para una juntada."
+    upselling: ["Fernet Branca 750ml", "Maní con chocolate"]
+
+combos:
+  - "2x1 en cervezas los viernes de 18h a 22h"
+  - "Pack Fernet-Coca: Fernet Branca 750ml + 2 Coca-Cola 1.5L por $5500 (ahorrás $450)"
+  - "Pack Aperol Spritz: Aperol 700ml + Chandon Extra Brut 750ml + Soda Schweppes 1.5L por $11500 (ahorrás $1000)"
+  - "Envío gratis superando $5000 ARS en CABA y GBA"
+  - "10% de descuento en compras mayores a $15000 ARS"
