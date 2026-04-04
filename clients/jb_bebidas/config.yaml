@@ -1,5 +1,6 @@
 company_name: "JB Bebidas"
 agent_name: "Juani"
+client_type: "beverages"
 niche: "distribuidora de bebidas"
 language: "es_AR"
 working_hours: "lunes a jueves de 9h a 20h, viernes a domingo de 9h a 22h"

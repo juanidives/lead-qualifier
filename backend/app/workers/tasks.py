@@ -17,7 +17,7 @@ Vantagem: o webhook nunca trava, mesmo que a OpenAI demore 10s.
 
 import logging
 from app.workers.celery_app import celery_app
-from app.agent import sofia
+from app.agent import agent
 from app.services.evolution_service import send_text_message, strip_markdown
 from app.services.cache_service import get_cached_response, set_cached_response
 
@@ -53,7 +53,7 @@ def process_whatsapp_message(self, phone: str, text: str, push_name: str = ""):
 
     # ─── Chama a Sofia (OpenAI) ────────────────────────────
     try:
-        response = sofia.run(text, session_id=phone)
+        response = agent.run(text, session_id=phone)
         reply_text = strip_markdown(response.content)
     except Exception as exc:
         logger.exception(f"[Celery] Erro ao processar mensagem de {phone}")

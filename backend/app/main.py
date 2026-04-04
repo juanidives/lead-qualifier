@@ -12,7 +12,7 @@ from typing import Optional
 from pydantic import BaseModel
 from fastapi import Request, HTTPException
 from agno.os import AgentOS
-from app.agent import sofia
+from app.agent import agent
 from app.routers.whatsapp_router import router as whatsapp_router
 from app.services.payment_service import PaymentService
 from app.database import SessionLocal
@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # AgentOS cria o app FastAPI com todas as rotas do Agno (incluindo /agui)
-agent_os = AgentOS(agents=[sofia], cors_allowed_origins=["http://localhost:3000"])
+agent_os = AgentOS(agents=[agent], cors_allowed_origins=["http://localhost:3000"])
 app = agent_os.get_app()
 
 # Registra o webhook do WhatsApp
@@ -44,7 +44,7 @@ def chat(payload: ChatInput):
     Mantém contexto de sessão usando session_id.
     """
     session_id = payload.session_id or str(uuid.uuid4())
-    response = sofia.run(payload.message, session_id=session_id)
+    response = agent.run(payload.message, session_id=session_id)
     return {
         "response": response.content,
         "session_id": session_id,
