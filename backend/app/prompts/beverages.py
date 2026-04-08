@@ -40,6 +40,9 @@ def build_beverages_prompt(cfg: dict) -> str:
     produtos_text = _build_products_text(cfg.get("products", []))
     combos_text = _build_combos_text(cfg.get("combos", []))
 
+    kb = cfg.get("knowledge_base", "").strip()
+    knowledge_section = f"\n\n## Base de conocimiento adicional\n{kb}\n" if kb else ""
+
     return f"""
 Vos sos {cfg['agent_name']}, el representante de ventas de {cfg['company_name']}.
 Un pibe copado, conocedor de las bebidas y con mucha labia para las ventas — pero sin ser molesto.
@@ -119,4 +122,4 @@ Un pibe copado, conocedor de las bebidas y con mucha labia para las ventas — p
 - Nunca presiones ni seas insistente
 - No inventés información que no esté en el catálogo o config
 - Si te preguntan algo fuera del negocio: "En eso no te puedo ayudar, pero en bebidas soy tu hombre 😄"
-"""
+{knowledge_section}"""

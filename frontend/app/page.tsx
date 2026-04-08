@@ -7,12 +7,35 @@ interface Message {
   content: string
 }
 
+interface AgentConfig {
+  agent_name: string
+  niche: string
+  company_name: string
+}
+
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [agentConfig, setAgentConfig] = useState<AgentConfig>({
+    agent_name: '...',
+    niche: '',
+    company_name: '',
+  })
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  // Carrega o nome do agente ativo do backend
+  useEffect(() => {
+    fetch('http://127.0.0.1:8000/agent-info')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.agent_name) setAgentConfig(data as AgentConfig)
+      })
+      .catch(() => {
+        // fallback silencioso se o backend não estiver rodando
+      })
+  }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -59,16 +82,18 @@ export default function Home() {
     }
   }
 
+  const initial = agentConfig.agent_name?.charAt(0)?.toUpperCase() ?? '?'
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b px-6 py-4 flex items-center gap-3 shadow-sm">
         <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
-          S
+          {initial}
         </div>
         <div>
-          <h1 className="font-semibold text-gray-900">Sofia</h1>
-          <p className="text-xs text-gray-500">Especialista em qualificação de leads</p>
+          <h1 className="font-semibold text-gray-900">{agentConfig.agent_name}</h1>
+          <p className="text-xs text-gray-500">{agentConfig.niche}</p>
         </div>
       </div>
 
@@ -76,7 +101,7 @@ export default function Home() {
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
         {messages.length === 0 && (
           <div className="text-center text-gray-400 mt-20">
-            <p className="text-lg">👋 Olá! Sou a Sofia.</p>
+            <p className="text-lg">👋 Olá! Sou {agentConfig.agent_name}.</p>
             <p className="text-sm mt-1">Manda uma mensagem para começar.</p>
           </div>
         )}
@@ -85,7 +110,7 @@ export default function Home() {
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'assistant' && (
               <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold mr-2 mt-1 shrink-0">
-                S
+                {initial}
               </div>
             )}
             <div
@@ -103,7 +128,7 @@ export default function Home() {
         {loading && (
           <div className="flex justify-start">
             <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold mr-2 shrink-0">
-              S
+              {initial}
             </div>
             <div className="bg-white border rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
               <div className="flex gap-1 items-center h-4">

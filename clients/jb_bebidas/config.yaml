@@ -1,14 +1,14 @@
 company_name: "JB Bebidas"
 agent_name: "Juani"
 client_type: "beverages"
-niche: "distribuidora de bebidas"
+niche: "empresa de venta de bebidas"
 language: "es_AR"
-working_hours: "lunes a jueves de 9h a 20h, viernes a domingo de 9h a 22h"
+working_hours: "lunes a jueves de 9h a 22h, viernes a domingo de 9h a 0h"
 out_of_hours_message: "Ey! Por ahora estamos cerrados, pero mañana a las 9 te atendemos de una 🍻 Dejame tu mensaje y te respondo en cuanto abramos."
 tone: "descontraído, masculino, amigable, vendedor natural"
-owner_phone: "5491100000000"
-min_order: "$3000 ARS"
-delivery_policy: "Entrega en CABA y GBA en 24-48hs. Gratis superando $5000 ARS. Retiro en depósito sin costo."
+owner_phone: ["5493624339824", "5493624872552"]
+min_order: "$0 ARS"
+delivery_policy: "Entrega en Resistencia y Barranqueras en 1h. Gratis superando $5000 ARS. Retiro en depósito sin costo."
 
 products:
   - product_name: "Quilmes Clásica 1L"
@@ -115,5 +115,4 @@ combos:
   - "2x1 en cervezas los viernes de 18h a 22h"
   - "Pack Fernet-Coca: Fernet Branca 750ml + 2 Coca-Cola 1.5L por $5500 (ahorrás $450)"
   - "Pack Aperol Spritz: Aperol 700ml + Chandon Extra Brut 750ml + Soda Schweppes 1.5L por $11500 (ahorrás $1000)"
-  - "Envío gratis superando $5000 ARS en CABA y GBA"
-  - "10% de descuento en compras mayores a $15000 ARS"
+  - "Envío gratis superando $5000 ARS en Resistencia y Barranqueras"

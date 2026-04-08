@@ -21,12 +21,30 @@ from app.models import CustomerOrder
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+from app.company_config import config as company_config
+
 # AgentOS cria o app FastAPI com todas as rotas do Agno (incluindo /agui)
 agent_os = AgentOS(agents=[agent], cors_allowed_origins=["http://localhost:3000"])
 app = agent_os.get_app()
 
 # Registra o webhook do WhatsApp
 app.include_router(whatsapp_router)
+
+
+# -------------------------------------------------------------------
+# Endpoint /config — retorna dados do agente ativo para o frontend
+# -------------------------------------------------------------------
+@app.get("/agent-info")
+def get_config():
+    """
+    Retorna o nome e a descrição do agente ativo.
+    O frontend usa isso para exibir o nome correto do agente.
+    """
+    return {
+        "agent_name": company_config.get("agent_name", "Agente"),
+        "niche": company_config.get("niche", ""),
+        "company_name": company_config.get("company_name", ""),
+    }
 
 
 # -------------------------------------------------------------------
