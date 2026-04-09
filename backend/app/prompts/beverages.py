@@ -9,7 +9,7 @@ client_type: "beverages"
 Para adicionar um novo cliente desta vertical, basta criar
 clients/<novo-cliente>/config.yaml com client_type: "beverages"
 e preencher os campos: products, combos, min_order, delivery_policy,
-owner_phone, tone, working_hours.
+owner_phone, tone, working_hours, payment_alias.
 """
 
 
@@ -38,8 +38,9 @@ def build_beverages_prompt(cfg: dict) -> str:
         System prompt completo como string
     """
     produtos_text = _build_products_text(cfg.get("products", []))
-    combos_text = _build_combos_text(cfg.get("combos", []))
+    combos_text   = _build_combos_text(cfg.get("combos", []))
 
+    # Base de conhecimento adicional (knowledge_base.md)
     kb = cfg.get("knowledge_base", "").strip()
     knowledge_section = f"\n\n## Base de conocimiento adicional\n{kb}\n" if kb else ""
 
@@ -51,6 +52,13 @@ def build_beverages_prompt(cfg: dict) -> str:
         owner_phones_text = str(_owner) if _owner else ""
     owner_section = f"\n- **Contacto directo del dueño:** {owner_phones_text}" if owner_phones_text else ""
 
+    # Alias de pagamento (transferência bancária)
+    payment_alias = cfg.get("payment_alias", "").strip()
+    payment_section = (
+        f"\n- **Alias para transferencia:** `{payment_alias}`"
+        if payment_alias else ""
+    )
+
     return f"""
 Vos sos {cfg['agent_name']}, el representante de ventas de {cfg['company_name']}.
 Un pibe copado, conocedor de las bebidas y con mucha labia para las ventas — pero sin ser molesto.
@@ -59,7 +67,7 @@ Un pibe copado, conocedor de las bebidas y con mucha labia para las ventas — p
 - **Nombre:** {cfg['company_name']}
 - **Horario:** {cfg['working_hours']}
 - **Política de entrega:** {cfg['delivery_policy']}
-- **Pedido mínimo:** {cfg['min_order']}{owner_section}
+- **Pedido mínimo:** {cfg['min_order']}{owner_section}{payment_section}
 
 ## Catálogo de productos
 {produtos_text}
@@ -121,8 +129,13 @@ Un pibe copado, conocedor de las bebidas y con mucha labia para las ventas — p
 2. **Exploración** — entendé qué ocasión es (cumple, juntada, consumo diario, etc.)
 3. **Recomendación** — sugerí productos del catálogo que encajen con lo que dijo
 4. **Upselling natural** — cuando confirme un producto, sugerí el upselling relacionado UNA vez, sin insistir
-5. **Armado del pedido** — confirmá productos, cantidades y dirección de entrega
-6. **Cierre** — enviá resumen y generá el link de pago Mercado Pago
+5. **Armado del pedido** — confirmá productos, cantidades y dirección de entrega (o si pasa a buscar)
+6. **Cierre con transferencia** — enviá el resumen del pedido y el alias para la transferencia:
+   "Dale [nombre]! Acá va el resumen:
+   [lista de items]
+   Total: $[monto]
+   Para cerrar, hacé la transferencia al alias: {payment_alias if payment_alias else '[alias]'}
+   Cuando la tengas lista, mandame el comprobante y lo preparo de una 🙌"
 
 ## Reglas obligatorias
 - Máximo UNA pregunta por respuesta
@@ -130,4 +143,7 @@ Un pibe copado, conocedor de las bebidas y con mucha labia para las ventas — p
 - Nunca presiones ni seas insistente
 - No inventés información que no esté en el catálogo o config
 - Si te preguntan algo fuera del negocio: "En eso no te puedo ayudar, pero en bebidas soy tu hombre 😄"
+- **NUNCA confirmes el estado de preparación ni el pago de un pedido. Solo el dueño puede confirmar esas cosas.**
+- **Si el cliente pregunta si su pedido está listo o si recibieron el pago, respondé siempre: "Disculpá, eso lo está chequeando el equipo. Ya te confirmo en breve 😊"**
+- **NUNCA inventes información sobre el estado de un pedido aunque el cliente insista.**
 {knowledge_section}"""

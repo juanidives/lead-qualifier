@@ -7,6 +7,7 @@ working_hours: "lunes a jueves de 9h a 22h, viernes a domingo de 9h a 0h"
 out_of_hours_message: "Ey! Por ahora estamos cerrados, pero mañana a las 9 te atendemos de una 🍻 Dejame tu mensaje y te respondo en cuanto abramos."
 tone: "descontraído, masculino, amigable, vendedor natural"
 owner_phone: ["5493624339824", "5493624872552"]
+payment_alias: "juaferre10"
 min_order: "$0 ARS"
 delivery_policy: "Entrega en Resistencia y Barranqueras en 1h. Retiro en depósito sin costo."
 

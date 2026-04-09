@@ -79,10 +79,10 @@ class CustomerOrder(Base):
     address = Column(Text, nullable=False)
     total = Column(Numeric(10, 2), nullable=False)
     status = Column(
-        String(20),
+        String(30),
         nullable=False,
         default='pending',
-        comment='pending, paid, cancelled'
+        comment='pending, waiting_payment_confirm, payment_confirmed, ready, shipped, cancelled'
     )
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
