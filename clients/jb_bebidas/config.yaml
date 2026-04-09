@@ -8,7 +8,7 @@ out_of_hours_message: "Ey! Por ahora estamos cerrados, pero mañana a las 9 te a
 tone: "descontraído, masculino, amigable, vendedor natural"
 owner_phone: ["5493624339824", "5493624872552"]
 min_order: "$0 ARS"
-delivery_policy: "Entrega en Resistencia y Barranqueras en 1h. Gratis superando $5000 ARS. Retiro en depósito sin costo."
+delivery_policy: "Entrega en Resistencia y Barranqueras en 1h. Retiro en depósito sin costo."
 
 products:
   - product_name: "Quilmes Clásica 1L"
@@ -115,4 +115,4 @@ combos:
   - "2x1 en cervezas los viernes de 18h a 22h"
   - "Pack Fernet-Coca: Fernet Branca 750ml + 2 Coca-Cola 1.5L por $5500 (ahorrás $450)"
   - "Pack Aperol Spritz: Aperol 700ml + Chandon Extra Brut 750ml + Soda Schweppes 1.5L por $11500 (ahorrás $1000)"
-  - "Envío gratis superando $5000 ARS en Resistencia y Barranqueras"
+  - "Costo de envío entre $4000-5000 ARS en Resistencia y Barranqueras"
