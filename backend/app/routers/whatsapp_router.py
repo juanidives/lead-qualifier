@@ -171,7 +171,7 @@ async def whatsapp_webhook(request: Request):
     except Exception:
         raise HTTPException(status_code=400, detail="Payload inválido")
 
-    event = payload.get("event", "")
+    event = payload.get("event", "").upper().replace(".", "_")
     logger.info(f"[WhatsApp webhook] evento: {event}")
 
     # Só processamos mensagens recebidas

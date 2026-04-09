@@ -29,9 +29,11 @@ services:
   # Dashboard: http://localhost:8080
   # ─────────────────────────────────────────────
   evolution-api:
-    image: atendai/evolution-api:latest
+    image: evoapicloud/evolution-api:v2.3.7
     container_name: evolution-api
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     dns:
       - 8.8.8.8
       - 8.8.4.4

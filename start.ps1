@@ -10,5 +10,5 @@ Start-Process powershell -ArgumentList @(
 # Inicia o Celery Worker
 Start-Process powershell -ArgumentList @(
     "-NoExit", "-Command",
-    "cd C:\Workspace\ia\lead-qualifier\backend; .\.venv\Scripts\Activate.ps1; celery -A app.workers.celery_app worker --loglevel=info"
+    "cd C:\Workspace\ia\lead-qualifier\backend; .\.venv\Scripts\Activate.ps1; celery -A app.workers.celery_app worker --loglevel=info --pool=solo"
 )
