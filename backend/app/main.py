@@ -140,13 +140,21 @@ async def mercadopago_webhook(request: Request):
 
     db = SessionLocal()
     mp_service = PaymentService(os.getenv("MERCADOPAGO_ACCESS_TOKEN", ""))
-    owner_phone = os.getenv("OWNER_PHONE", "")  # opcional
+
+    # Suporta owner_phone como string ou lista no config.yaml
+    _owner_cfg = company_config.get("owner_phone", os.getenv("OWNER_PHONE", ""))
+    if isinstance(_owner_cfg, list):
+        owner_phones = [str(p) for p in _owner_cfg if p]
+    else:
+        owner_phones = [str(_owner_cfg)] if _owner_cfg else []
 
     try:
         # Processa baseado no status do pagamento
         if payment_status == "approved":
             logger.info(f"[MercadoPago] Pagamento aprovado para order_id={order_id}")
-            mp_service.handle_payment_approved(order_id, db, owner_phone)
+            # Notifica todos os donos configurados
+            for owner_phone in owner_phones:
+                mp_service.handle_payment_approved(order_id, db, owner_phone)
 
         elif payment_status == "rejected":
             reason = data.get("reason", "desconocido")

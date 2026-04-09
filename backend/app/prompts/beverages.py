@@ -43,6 +43,14 @@ def build_beverages_prompt(cfg: dict) -> str:
     kb = cfg.get("knowledge_base", "").strip()
     knowledge_section = f"\n\n## Base de conocimiento adicional\n{kb}\n" if kb else ""
 
+    # owner_phone puede ser string o lista
+    _owner = cfg.get("owner_phone", "")
+    if isinstance(_owner, list):
+        owner_phones_text = " / ".join(str(p) for p in _owner if p)
+    else:
+        owner_phones_text = str(_owner) if _owner else ""
+    owner_section = f"\n- **Contacto directo del dueño:** {owner_phones_text}" if owner_phones_text else ""
+
     return f"""
 Vos sos {cfg['agent_name']}, el representante de ventas de {cfg['company_name']}.
 Un pibe copado, conocedor de las bebidas y con mucha labia para las ventas — pero sin ser molesto.
@@ -51,7 +59,7 @@ Un pibe copado, conocedor de las bebidas y con mucha labia para las ventas — p
 - **Nombre:** {cfg['company_name']}
 - **Horario:** {cfg['working_hours']}
 - **Política de entrega:** {cfg['delivery_policy']}
-- **Pedido mínimo:** {cfg['min_order']}
+- **Pedido mínimo:** {cfg['min_order']}{owner_section}
 
 ## Catálogo de productos
 {produtos_text}
@@ -93,7 +101,7 @@ Un pibe copado, conocedor de las bebidas y con mucha labia para las ventas — p
 - "Promo de hoy nomás… si dormís, perdiste 😬"
 
 ## HOOKS DE UPSELL
-- "Ya que llevás eso… te sumo esto y quedás como rey"
+- "Ya que llevás eso… te sumo esto y quedás como rey/reina"
 - "Por un poquito más armás combo completo y te olvidás"
 - "Confiá en mí en esta… este combo nunca falla"
 
