@@ -29,7 +29,7 @@ if POSTGRES_URL:
     from agno.db.postgres import PostgresDb
     agent_db = PostgresDb(
         db_url=POSTGRES_URL,
-        table_name="agent_sessions",
+        session_table="agent_sessions",
     )
 else:
     from agno.db.sqlite import SqliteDb
