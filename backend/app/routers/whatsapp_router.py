@@ -26,7 +26,7 @@ from datetime import datetime
 
 from app.workers.tasks import process_whatsapp_message, send_audio_autoresponse
 from app.services import order_commands_service
-from app.services.evolution_service import send_text_message
+from app.services.evolution_service import send_text_message, send_button_message
 from app.database import SessionLocal
 from app.models import Contact, Conversation, CustomerOrder
 from app.company_config import config as company_config
@@ -97,6 +97,17 @@ def _detect_image_message(data: dict) -> bool:
     """Detecta mensagem de imagem."""
     msg = data.get("message", {})
     return bool(msg.get("imageMessage"))
+
+
+def _extract_button_response(data: dict) -> str | None:
+    """
+    Extrai o ID do botão selecionado quando o owner toca em um botão interativo.
+    Evolution API envia buttonsResponseMessage dentro de data.message.
+    Retorna o selectedButtonId ou None se não for resposta de botão.
+    """
+    msg = data.get("message", {})
+    resp = msg.get("buttonsResponseMessage", {})
+    return resp.get("selectedButtonId") or None
 
 
 def _is_payment_proof(text: str | None, has_image: bool) -> bool:
@@ -171,6 +182,39 @@ def _save_conversation(contact_id: int, role: str, content: str, msg_type: str =
 
 
 # ─────────────────────────────────────────────────────────────
+# Helpers — histórico de conversa
+# ─────────────────────────────────────────────────────────────
+
+def _get_recent_conversation(contact_id: int, limit: int = 6) -> str:
+    """
+    Retorna as últimas `limit` mensagens da conversa como texto formatado.
+    Útil para mostrar ao owner o que foi pedido quando não há pedido no BD.
+    """
+    db = SessionLocal()
+    try:
+        messages = (
+            db.query(Conversation)
+            .filter(Conversation.contact_id == contact_id)
+            .order_by(Conversation.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        if not messages:
+            return "(sin historial de conversa)"
+        lines = []
+        for msg in reversed(messages):
+            role_label = "Cliente" if msg.role == "user" else "Juani"
+            content = (msg.content or "").replace("\n", " ")[:120]
+            lines.append(f"{role_label}: {content}")
+        return "\n".join(lines)
+    except Exception:
+        logger.warning(f"[PaymentProof] Erro ao carregar histórico contact_id={contact_id}")
+        return "(error al cargar historial)"
+    finally:
+        db.close()
+
+
+# ─────────────────────────────────────────────────────────────
 # Fluxo de comprovante de pagamento — síncrono (sem Celery)
 # ─────────────────────────────────────────────────────────────
 
@@ -238,48 +282,96 @@ def _handle_payment_proof(phone: str, push_name: str) -> None:
         # Monta texto dos itens (se disponíveis)
         if order and order.items:
             items_lines = "\n".join([
-                f"{item['product_name']} x{item['quantity']} = ${item['subtotal']:.0f}"
+                f"• {item['product_name']} x{item['quantity']} = ${item['subtotal']:.0f}"
                 for item in order.items
             ])
+        elif contact:
+            # Sem pedido no BD — mostra histórico de conversa para contexto
+            conv = _get_recent_conversation(contact.id, limit=6)
+            items_lines = f"💬 Últimas mensajes:\n{conv}"
         else:
-            items_lines = "(detalle a confirmar — el cliente aún no cerró el pedido)"
+            items_lines = "(sin historial disponible)"
 
         # Monta linha de entrega
         address = order.address if order and order.address not in (None, "—", "") else ""
-        if address and address.lower() != "retiro":
+        if address and address.lower() not in ("retiro", "—"):
             delivery_line = f"Envío a: {address}"
-        elif address.lower() == "retiro" if address else False:
+        elif address and address.lower() == "retiro":
             delivery_line = "Retiro en depósito"
         else:
             delivery_line = "(modalidad a confirmar)"
 
-        # MSG 1 — Notificação de pago recibido
-        msg1 = (
-            f"💰 PAGO RECIBIDO\n"
-            f"Cliente: {cliente_nome} ({phone})\n"
-            f"Monto: {total_str}\n"
-            f"─────────────────\n"
-            f"Respondé: CONFIRMAR PAGO {cliente_nome}\n"
-            f"para que el cliente sepa que recibiste"
+        # MSG 1 — Confirmar / Rechazar pago
+        msg1_title       = "💰 PAGO RECIBIDO"
+        msg1_description = (
+            f"Cliente: {cliente_nome}\n"
+            f"Teléfono: {phone}\n"
+            f"Monto: {total_str}"
         )
+        msg1_footer  = "JB Bebidas · confirmá o rechazá el pago"
+        msg1_buttons = [
+            {"displayText": "✅ Confirmar pago", "id": f"CP:{cliente_nome}"},
+            {"displayText": "❌ Rechazar",        "id": f"RP:{cliente_nome}"},
+        ]
 
-        # MSG 2 — Detalhes do pedido para preparar
-        msg2 = (
-            f"🛒 PEDIDO #{order_id}\n"
+        # MSG 2 — Detalhes do pedido + ações de entrega
+        msg2_title       = f"🛒 PEDIDO #{order_id}"
+        msg2_description = (
             f"{items_lines}\n"
             f"─────────────────\n"
             f"Total: {total_str}\n"
-            f"{delivery_line}\n"
-            f"─────────────────\n"
-            f"Respondé: LISTO {cliente_nome} cuando esté listo para retiro\n"
-            f"Respondé: ENVIADO {cliente_nome} cuando salga para entrega"
+            f"{delivery_line}"
         )
+        msg2_footer  = "Tocá cuando esté listo o salga para entrega"
+        msg2_buttons = [
+            {"displayText": "🏪 Listo para retirar", "id": f"LS:{cliente_nome}"},
+            {"displayText": "🚚 Enviado",             "id": f"EV:{cliente_nome}"},
+        ]
+
+        def _send_with_fallback(owner_phone: str, title: str, description: str,
+                                footer: str, buttons: list, fallback_text: str) -> None:
+            """Tenta botões; se a API não suportar usa texto puro."""
+            try:
+                send_button_message(
+                    phone=owner_phone,
+                    title=title,
+                    description=description,
+                    footer=footer,
+                    buttons=buttons,
+                )
+            except Exception as btn_err:
+                logger.warning(f"[PaymentProof] Botões falhou ({btn_err}), usando texto")
+                send_text_message(phone=owner_phone, text=fallback_text)
 
         # Envia para cada owner
         for owner_phone in OWNER_PHONES:
             try:
-                send_text_message(phone=owner_phone, text=msg1)
-                send_text_message(phone=owner_phone, text=msg2)
+                _send_with_fallback(
+                    owner_phone,
+                    title=msg1_title,
+                    description=msg1_description,
+                    footer=msg1_footer,
+                    buttons=msg1_buttons,
+                    fallback_text=(
+                        f"{msg1_title}\n{msg1_description}\n"
+                        f"─────────────────\n"
+                        f"CONFIRMAR PAGO {cliente_nome}  →  confirma al cliente\n"
+                        f"RECHAZAR {cliente_nome}         →  rechazá el pago"
+                    ),
+                )
+                _send_with_fallback(
+                    owner_phone,
+                    title=msg2_title,
+                    description=msg2_description,
+                    footer=msg2_footer,
+                    buttons=msg2_buttons,
+                    fallback_text=(
+                        f"{msg2_title}\n{msg2_description}\n"
+                        f"─────────────────\n"
+                        f"LISTO {cliente_nome}   →  avisa que está listo para retirar\n"
+                        f"ENVIADO {cliente_nome}  →  avisa que salió para entrega"
+                    ),
+                )
                 logger.info(f"[PaymentProof] Notificações enviadas para owner {owner_phone}")
             except Exception:
                 logger.exception(f"[PaymentProof] Erro ao notificar owner {owner_phone}")
@@ -333,6 +425,35 @@ async def whatsapp_webhook(request: Request):
     # Mensagens do owner_phone são processadas deterministicamente,
     # nunca passam pelo agente Agno (LLM).
     if phone in OWNER_PHONES:
+        # Detecta resposta de botão interativo (owner tocou no botão)
+        button_id = _extract_button_response(data)
+        if button_id:
+            # Mapeia ID do botão para comando de texto equivalente
+            # Formato dos IDs: "CP:Nome", "RP:Nome", "LS:Nome", "EV:Nome"
+            if button_id.startswith("CP:"):
+                nombre = button_id[3:]
+                logger.info(f"[WhatsApp] Owner botão CONFIRMAR PAGO '{nombre}' de {phone}")
+                order_commands_service.handle_confirmar_pago(nombre, owner_phone=phone)
+                return {"status": "ok", "command": "CONFIRMAR PAGO (button)"}
+            elif button_id.startswith("RP:"):
+                nombre = button_id[3:]
+                logger.info(f"[WhatsApp] Owner botão RECHAZAR '{nombre}' de {phone}")
+                # Por enquanto apenas loga — pode ser expandido depois
+                return {"status": "ok", "command": "RECHAZAR (button)"}
+            elif button_id.startswith("LS:"):
+                nombre = button_id[3:]
+                logger.info(f"[WhatsApp] Owner botão LISTO '{nombre}' de {phone}")
+                order_commands_service.handle_listo(nombre, owner_phone=phone)
+                return {"status": "ok", "command": "LISTO (button)"}
+            elif button_id.startswith("EV:"):
+                nombre = button_id[3:]
+                logger.info(f"[WhatsApp] Owner botão ENVIADO '{nombre}' de {phone}")
+                order_commands_service.handle_enviado(nombre, owner_phone=phone)
+                return {"status": "ok", "command": "ENVIADO (button)"}
+            else:
+                logger.info(f"[WhatsApp] Owner tocou botão desconhecido: '{button_id}'")
+                return {"status": "ignored", "reason": "unknown_button"}
+
         text = _extract_text(data)
         if not text:
             return {"status": "ignored", "reason": "owner_no_text"}

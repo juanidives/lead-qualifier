@@ -43,6 +43,58 @@ def send_text_message(phone: str, text: str) -> dict:
         return response.json()
 
 
+def send_button_message(
+    phone: str,
+    title: str,
+    description: str,
+    footer: str,
+    buttons: list[dict],
+) -> dict:
+    """
+    Envia mensagem com botões interativos via Evolution API.
+
+    Args:
+        phone:       número no formato internacional, ex: "5511999990000"
+        title:       título em negrito da mensagem
+        description: corpo da mensagem
+        footer:      rodapé em cinza
+        buttons:     lista de dicts com 'displayText' e 'id'
+                     ex: [{"displayText": "✅ Confirmar", "id": "CP:Ana Arce"}]
+
+    Returns:
+        JSON de resposta da API.
+
+    Raises:
+        httpx.HTTPStatusError: se a API retornar erro HTTP.
+    """
+    url = f"{EVOLUTION_API_URL}/message/sendButtons/{EVOLUTION_INSTANCE}"
+
+    headers = {
+        "apikey": EVOLUTION_API_KEY,
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "number": phone,
+        "title": title,
+        "description": description,
+        "footer": footer,
+        "buttons": [
+            {
+                "type": "reply",
+                "displayText": btn["displayText"],
+                "id": btn["id"],
+            }
+            for btn in buttons
+        ],
+    }
+
+    with httpx.Client(timeout=30) as client:
+        response = client.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        return response.json()
+
+
 def strip_markdown(text: str) -> str:
     """
     Converte formatação Markdown para o formato nativo do WhatsApp.

@@ -12,108 +12,110 @@ min_order: "$0 ARS"
 delivery_policy: "Entrega en Resistencia y Barranqueras en 1h. Retiro en depósito sin costo."
 
 products:
-  - product_name: "Quilmes Clásica 1L"
-    category: "beer"
-    price: 850
-    cost_price: 520
-    alcohol: true
-    stock_quantity: 200
-    is_available: true
-    description: "La cerveza rubia más querida de Argentina. Refrescante y suave, ideal para cualquier momento."
-    upselling: ["Maní con chocolate", "Fernet Branca 750ml"]
-
-  - product_name: "Corona Extra 355ml"
-    category: "beer"
-    price: 1200
-    cost_price: 780
-    alcohol: true
-    stock_quantity: 150
-    is_available: true
-    description: "Cerveza premium mexicana, liviana y refrescante. Perfecta con un gajo de limón."
-    upselling: ["Quilmes Clásica 1L", "Aperol 700ml"]
-
-  - product_name: "Fernet Branca 750ml"
-    category: "spirit"
+  - product_name: "Coca-Cola 2.25L"
+    category: "Gaseosa"
     price: 4500
-    cost_price: 3100
-    alcohol: true
-    stock_quantity: 80
-    is_available: true
-    description: "El amargo italiano favorito de los argentinos. Imprescindible para el clásico Fernet con Coca."
-    upselling: ["Coca-Cola 1.5L", "Quilmes Clásica 1L"]
-
-  - product_name: "Aperol 700ml"
-    category: "aperitive"
-    price: 5200
-    cost_price: 3600
-    alcohol: true
-    stock_quantity: 60
-    is_available: true
-    description: "El aperitivo italiano de moda. Base del Aperol Spritz, dulce y amargo a la vez."
-    upselling: ["Chandon Extra Brut 750ml", "Soda Schweppes 1.5L"]
-
-  - product_name: "Chandon Extra Brut 750ml"
-    category: "wine"
-    price: 6800
-    cost_price: 4800
-    alcohol: true
-    stock_quantity: 40
-    is_available: true
-    description: "El espumante argentino por excelencia. Elegante y fresco, ideal para brindar en cualquier ocasión."
-    upselling: ["Aperol 700ml", "Copa de plástico premium x6"]
-
-  - product_name: "Malbec Rutini 750ml"
-    category: "wine"
-    price: 8500
-    cost_price: 5900
-    alcohol: true
-    stock_quantity: 35
-    is_available: true
-    description: "Malbec mendocino de alta gama. Robusto, con notas a frutas rojas y madera. Ideal para una cena especial."
-    upselling: ["Chandon Extra Brut 750ml", "Fernet Branca 750ml"]
-
-  - product_name: "Vodka Smirnoff 750ml"
-    category: "spirit"
-    price: 4200
-    cost_price: 2900
-    alcohol: true
-    stock_quantity: 70
-    is_available: true
-    description: "El vodka más vendido del mundo. Suave y versátil, base de los mejores tragos."
-    upselling: ["Jugo Tang x6 sobres", "Coca-Cola 1.5L"]
-
-  - product_name: "Coca-Cola 1.5L"
-    category: "non_alcoholic"
-    price: 650
-    cost_price: 380
+    cost_price: 3166
     alcohol: false
-    stock_quantity: 300
+    stock_quantity: 24
     is_available: true
-    description: "La gaseosa clásica. Imprescindible para acompañar cualquier bebida alcohólica."
-    upselling: ["Fernet Branca 750ml", "Vodka Smirnoff 750ml"]
+    description: "El sabor clásico que acompaña tus mejores momentos con amigos."
+    upselling: ["Fernet 750ml - Branca", "Fernet 750ml - 1882"]
 
-  - product_name: "Soda Schweppes 1.5L"
-    category: "non_alcoholic"
-    price: 550
-    cost_price: 320
+  - product_name: "Sprite 2.25L"
+    category: "Gaseosa"
+    price: 4500
+    cost_price: 3166
     alcohol: false
-    stock_quantity: 250
+    stock_quantity: 24
     is_available: true
-    description: "Soda premium, ideal para Aperol Spritz, fernet o para tomar sola bien fría."
-    upselling: ["Aperol 700ml", "Fernet Branca 750ml"]
+    description: "Refrescante y liviana, ideal para calmar la sed en días calurosos."
+    upselling: ["Vodka 700ml - Smirnoff", "Vodka 750ml - Sky"]
 
-  - product_name: "Six Pack Quilmes Lata 473ml"
-    category: "beer"
-    price: 3800
-    cost_price: 2600
-    alcohol: true
-    stock_quantity: 100
+  - product_name: "Fanta 2.25L"
+    category: "Gaseosa"
+    price: 4500
+    cost_price: 3166
+    alcohol: false
+    stock_quantity: 24
     is_available: true
-    description: "Seis latas de Quilmes para compartir. La opción más práctica para una juntada."
-    upselling: ["Fernet Branca 750ml", "Maní con chocolate"]
+    description: "Dulce y divertida, perfecta para compartir risas en familia."
+    upselling: ["Vodka 700ml - Smirnoff", "Vodka 750ml - Sky"]
+
+  - product_name: "Aperol 750ml"
+    category: "Aperitivo"
+    price: 9300
+    cost_price: 0
+    alcohol: true
+    stock_quantity: 5
+    is_available: true
+    description: "El toque justo de amargor y frescura para disfrutar momentos inolvidables."
+    upselling: ["Sprite 2.25L", "Combo Aperol 750ml + Sprite 2.25L"]
+
+  - product_name: "Vodka 700ml - Smirnoff"
+    category: "Vodka"
+    price: 9000
+    cost_price: 0
+    alcohol: true
+    stock_quantity: 10
+    is_available: true
+    description: "Versátil y vibrante, ideal para noches de fiesta y buena compañía."
+    upselling: ["Sprite 2.25L", "Combo Vodka 700ml - Smirnoff + Sprite 2.25L"]
+
+  - product_name: "Vodka 750ml - Sky"
+    category: "Vodka"
+    price: 7800
+    cost_price: 0
+    alcohol: true
+    stock_quantity: 8
+    is_available: true
+    description: "Suave y elegante, perfecto para tragos que marcan la noche."
+    upselling: ["Sprite 2.25L", "Combo Vodka 750ml - Sky + Sprite 2.25L"]
+
+  - product_name: "Johnnie Walker Red Label 750ml"
+    category: "Whisky"
+    price: 30000
+    cost_price: 26000
+    alcohol: true
+    stock_quantity: 1
+    is_available: true
+    description: "Intenso y con carácter, para celebrar logros importantes."
+    upselling: ["Coca-Cola 2.25L"]
+
+  - product_name: "Fernet 750ml - 1882"
+    category: "Fernet"
+    price: 9500
+    cost_price: 0
+    alcohol: true
+    stock_quantity: 6
+    is_available: true
+    description: "El sabor argentino que une amigos y largas charlas."
+    upselling: ["Coca-Cola 2.25L", "Combo Fernet 750ml - 1882 + Coca-Cola 2.25L"]
+
+  - product_name: "Fernet 750ml - Branca"
+    category: "Fernet"
+    price: 16000
+    cost_price: 13775
+    alcohol: true
+    stock_quantity: 16
+    is_available: true
+    description: "Tradición y personalidad en cada brindis compartido."
+    upselling: ["Coca-Cola 2.25L", "Combo Fernet 750ml - Branca + Coca-Cola 2.25L"]
+
+  - product_name: "Fernet 450ml - Branca"
+    category: "Fernet"
+    price: 12000
+    cost_price: 9166
+    alcohol: true
+    stock_quantity: 8
+    is_available: true
+    description: "Ideal para encuentros espontáneos llenos de buena energía."
+    upselling: ["Coca-Cola 2.25L", "Fernet 750ml - Branca"]
 
 combos:
-  - "2x1 en cervezas los viernes de 18h a 22h"
-  - "Pack Fernet-Coca: Fernet Branca 750ml + 2 Coca-Cola 1.5L por $5500 (ahorrás $450)"
-  - "Pack Aperol Spritz: Aperol 700ml + Chandon Extra Brut 750ml + Soda Schweppes 1.5L por $11500 (ahorrás $1000)"
+  - "Combo Fernet 750ml - Branca + Coca-Cola 2.25L por $19500 (ahorrás $1000)"
+  - "Combo Fernet 750ml - 1882 + Coca-Cola 2.25L por $13000 (ahorrás $1000)"  
+  - "Combo Vodka 700ml - Smirnoff + Sprite 2.25L por $12500 (ahorrás $1000)"
+  - "Combo Vodka 750ml - Sky + Sprite 2.25L por $11000 (ahorrás $1300)"
+  - "Combo Aperol 750ml + Sprite 2.25L por $13000 (ahorrás $800)"
   - "Costo de envío entre $4000-5000 ARS en Resistencia y Barranqueras"
