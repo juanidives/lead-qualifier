@@ -21,6 +21,7 @@ from agno.models.openai import OpenAIChat
 from app.config import OPENAI_API_KEY, OPENAI_MODEL, POSTGRES_URL
 from app.company_config import config
 from app.prompts import get_prompt_builder
+from app.services.agent_tools import confirmar_pedido
 
 # ── Banco de dados para memória do agente ─────────────────────────
 # POSTGRES_URL vazio → usa SQLite (desenvolvimento)
@@ -51,4 +52,5 @@ agent = Agent(
     add_history_to_context=True,
     num_history_runs=20,
     markdown=True,
+    tools=[confirmar_pedido],
 )

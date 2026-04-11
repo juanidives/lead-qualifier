@@ -24,9 +24,9 @@ from decimal import Decimal
 from fastapi import APIRouter, Request, HTTPException
 from datetime import datetime
 
-from app.workers.tasks import process_whatsapp_message, send_audio_autoresponse
+from app.workers.tasks import enqueue_debounced, send_audio_autoresponse
 from app.services import order_commands_service
-from app.services.evolution_service import send_text_message, send_button_message
+from app.services.evolution_service import send_text_message
 from app.database import SessionLocal
 from app.models import Contact, Conversation, CustomerOrder
 from app.company_config import config as company_config
@@ -301,77 +301,35 @@ def _handle_payment_proof(phone: str, push_name: str) -> None:
         else:
             delivery_line = "(modalidad a confirmar)"
 
-        # MSG 1 — Confirmar / Rechazar pago
-        msg1_title       = "💰 PAGO RECIBIDO"
-        msg1_description = (
+        # MSG 1 — Notificação de pago recibido
+        msg1 = (
+            f"💰 PAGO RECIBIDO\n"
+            f"─────────────────\n"
             f"Cliente: {cliente_nome}\n"
             f"Teléfono: {phone}\n"
-            f"Monto: {total_str}"
+            f"Monto: {total_str}\n"
+            f"─────────────────\n"
+            f"CONFIRMAR PAGO {cliente_nome}"
         )
-        msg1_footer  = "JB Bebidas · confirmá o rechazá el pago"
-        msg1_buttons = [
-            {"displayText": "✅ Confirmar pago", "id": f"CP:{cliente_nome}"},
-            {"displayText": "❌ Rechazar",        "id": f"RP:{cliente_nome}"},
-        ]
 
-        # MSG 2 — Detalhes do pedido + ações de entrega
-        msg2_title       = f"🛒 PEDIDO #{order_id}"
-        msg2_description = (
+        # MSG 2 — Detalle del pedido + comandos
+        msg2 = (
+            f"🛒 PEDIDO #{order_id}\n"
+            f"─────────────────\n"
             f"{items_lines}\n"
             f"─────────────────\n"
             f"Total: {total_str}\n"
-            f"{delivery_line}"
+            f"{delivery_line}\n"
+            f"─────────────────\n"
+            f"LISTO {cliente_nome}   → listo para retirar\n"
+            f"ENVIADO {cliente_nome}  → salió para entrega"
         )
-        msg2_footer  = "Tocá cuando esté listo o salga para entrega"
-        msg2_buttons = [
-            {"displayText": "🏪 Listo para retirar", "id": f"LS:{cliente_nome}"},
-            {"displayText": "🚚 Enviado",             "id": f"EV:{cliente_nome}"},
-        ]
-
-        def _send_with_fallback(owner_phone: str, title: str, description: str,
-                                footer: str, buttons: list, fallback_text: str) -> None:
-            """Tenta botões; se a API não suportar usa texto puro."""
-            try:
-                send_button_message(
-                    phone=owner_phone,
-                    title=title,
-                    description=description,
-                    footer=footer,
-                    buttons=buttons,
-                )
-            except Exception as btn_err:
-                logger.warning(f"[PaymentProof] Botões falhou ({btn_err}), usando texto")
-                send_text_message(phone=owner_phone, text=fallback_text)
 
         # Envia para cada owner
         for owner_phone in OWNER_PHONES:
             try:
-                _send_with_fallback(
-                    owner_phone,
-                    title=msg1_title,
-                    description=msg1_description,
-                    footer=msg1_footer,
-                    buttons=msg1_buttons,
-                    fallback_text=(
-                        f"{msg1_title}\n{msg1_description}\n"
-                        f"─────────────────\n"
-                        f"CONFIRMAR PAGO {cliente_nome}  →  confirma al cliente\n"
-                        f"RECHAZAR {cliente_nome}         →  rechazá el pago"
-                    ),
-                )
-                _send_with_fallback(
-                    owner_phone,
-                    title=msg2_title,
-                    description=msg2_description,
-                    footer=msg2_footer,
-                    buttons=msg2_buttons,
-                    fallback_text=(
-                        f"{msg2_title}\n{msg2_description}\n"
-                        f"─────────────────\n"
-                        f"LISTO {cliente_nome}   →  avisa que está listo para retirar\n"
-                        f"ENVIADO {cliente_nome}  →  avisa que salió para entrega"
-                    ),
-                )
+                send_text_message(phone=owner_phone, text=msg1)
+                send_text_message(phone=owner_phone, text=msg2)
                 logger.info(f"[PaymentProof] Notificações enviadas para owner {owner_phone}")
             except Exception:
                 logger.exception(f"[PaymentProof] Erro ao notificar owner {owner_phone}")
@@ -518,11 +476,8 @@ async def whatsapp_webhook(request: Request):
         msg_type = 'image' if is_image else 'text'
         _save_conversation(contact.id, 'user', text, msg_type=msg_type)
 
-    # Enfileira para o agente Agno via Celery
-    process_whatsapp_message.delay(
-        phone=phone,
-        text=text,
-        push_name=push_name,
-    )
+    # Acumula no Redis e agenda com debounce (4s)
+    # Mensagens múltiplas do mesmo cliente são combinadas em uma só
+    enqueue_debounced(phone=phone, text=text, push_name=push_name)
 
     return {"status": "queued", "phone": phone}

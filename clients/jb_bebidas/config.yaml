@@ -9,7 +9,7 @@ tone: "descontraído, masculino, amigable, vendedor natural"
 owner_phone: ["5493624339824", "5493624872552"]
 payment_alias: "juaferre10"
 min_order: "$0 ARS"
-delivery_policy: "Entrega en Resistencia y Barranqueras en 1h. Retiro en depósito sin costo."
+delivery_policy: "Entrega en Resistencia y Barranqueras en 1h. Retiro en nuestro local sin costo."
 
 products:
   - product_name: "Coca-Cola 2.25L"
