@@ -4,10 +4,12 @@ client_type: "beverages"
 niche: "empresa de venta de bebidas"
 language: "es_AR"
 working_hours: "lunes a jueves de 9h a 22h, viernes a domingo de 9h a 0h"
-out_of_hours_message: "Ey! Por ahora estamos cerrados, pero mañana a las 9 te atendemos de una 🍻 Dejame tu mensaje y te respondo en cuanto abramos."
+out_of_hours_message: "¡Hola! En este momento estamos fuera del horario de envíos y retiros, pero puedo tomar tu pedido ahora y te confirmamos mañana cuando abramos. ¿Qué necesitás?"
 tone: "descontraído, masculino, amigable, vendedor natural"
 owner_phone: ["5493624339824", "5493624872552"]
 payment_alias: "juaferre10"
+payment_methods_pickup: ["transferencia", "efectivo"]
+payment_methods_delivery: ["transferencia"]
 min_order: "$0 ARS"
 delivery_policy: "Entrega en Resistencia y Barranqueras en 1h. Retiro en nuestro local sin costo."
 
