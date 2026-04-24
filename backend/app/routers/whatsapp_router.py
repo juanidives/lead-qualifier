@@ -48,11 +48,10 @@ else:
     OWNER_PHONES = {str(_owner_cfg)} if _owner_cfg else set()
 
 # Keywords que indicam comprovante de pagamento (espanhol argentino)
-# NOTA: 'hecho', 'hice', 'listo', 'dale' foram removidos — são palavras
-# de confirmação de pedido normais e causavam falsos positivos.
 PAYMENT_KEYWORDS = [
     'transferido', 'transferí', 'transferi', 'transf',
     'pagué', 'pague', 'pagado',
+    'hecho', 'hice',
     'comprobante',
     'ya pagué', 'ya pague',
     'ya transferí', 'ya transferi',
@@ -131,32 +130,24 @@ def _is_payment_proof(text: str | None, has_image: bool) -> bool:
 def _save_or_update_contact(phone: str, push_name: str = "") -> Contact | None:
     """
     Salva ou atualiza um contato no banco.
-
-    IMPORTANTE: push_name (nome do WhatsApp) é salvo apenas para referência
-    interna em logs. O campo `name` sempre começa como o número de telefone
-    e só é atualizado quando o cliente se apresenta durante a conversa.
-    Isso evita que o agente chame o cliente pelo nome do WhatsApp sem ele
-    ter se apresentado.
+    Contatos recebidos via WhatsApp chegam como source='inbound_whatsapp'.
     """
     db = SessionLocal()
     try:
         contact = db.query(Contact).filter(Contact.phone == phone).first()
 
         if not contact:
-            # Nome inicial = telefone — o agente perguntará o nome na conversa
             contact = Contact(
-                name=phone,
+                name=push_name or phone,
                 phone=phone,
-                push_name=push_name or None,
                 source='inbound_whatsapp',
                 is_active=True
             )
             db.add(contact)
-            logger.info(f"[WhatsApp] Novo contato criado: {phone} (push_name={push_name})")
+            logger.info(f"[WhatsApp] Novo contato criado: {phone} ({push_name})")
         else:
-            # Atualiza push_name se mudou (o cliente pode trocar o nome no WhatsApp)
-            if push_name and contact.push_name != push_name:
-                contact.push_name = push_name
+            if not contact.name or contact.name == contact.phone:
+                contact.name = push_name or contact.name
 
         db.commit()
         db.refresh(contact)
@@ -462,52 +453,16 @@ async def whatsapp_webhook(request: Request):
     text      = _extract_text(data)
 
     if _is_payment_proof(text, is_image):
+        logger.info(f"[WhatsApp] Comprovante de pagamento de {phone} ({push_name})")
         contact = _save_or_update_contact(phone, push_name)
-
-        # CORREÇÃO 2: só dispara se houver pedido 'pending' para este contato.
-        # Evita detectar 'dale, confirmado' como comprobante quando não há pedido.
-        has_pending_order = False
         if contact:
-            db_check = SessionLocal()
-            try:
-                pending = (
-                    db_check.query(CustomerOrder)
-                    .filter(
-                        CustomerOrder.contact_id == contact.id,
-                        CustomerOrder.status == 'pending'
-                    )
-                    .first()
-                )
-                has_pending_order = pending is not None
-
-                # CORREÇÃO 3: ignora comprovante duplicado se já está em 'waiting_payment_confirm'.
-                waiting = (
-                    db_check.query(CustomerOrder)
-                    .filter(
-                        CustomerOrder.contact_id == contact.id,
-                        CustomerOrder.status == 'waiting_payment_confirm'
-                    )
-                    .first()
-                )
-                if waiting:
-                    logger.info(f"[PaymentProof] Comprovante duplicado ignorado para {phone}")
-                    return {"status": "ignored", "reason": "duplicate_payment_proof"}
-            finally:
-                db_check.close()
-
-        if not has_pending_order:
-            # Sem pedido pendente — trata como mensagem normal e passa ao agente
-            logger.info(f"[WhatsApp] Keywords de pago sem pedido pendente — tratando como msg normal ({phone})")
-        else:
-            logger.info(f"[WhatsApp] Comprovante de pagamento de {phone} ({push_name})")
-            if contact:
-                _save_conversation(
-                    contact.id, 'user',
-                    '[Comprovante de pagamento]' if is_image else text,
-                    msg_type='image' if is_image else 'text'
-                )
-            _handle_payment_proof(phone=phone, push_name=push_name)
-            return {"status": "ok", "phone": phone, "type": "payment_proof"}
+            _save_conversation(
+                contact.id, 'user',
+                '[Comprovante de pagamento]' if is_image else text,
+                msg_type='image' if is_image else 'text'
+            )
+        _handle_payment_proof(phone=phone, push_name=push_name)
+        return {"status": "ok", "phone": phone, "type": "payment_proof"}
 
     # ─── PRIORIDADE 4: mensagem de texto normal ─────────────
     if not text:

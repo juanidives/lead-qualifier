@@ -24,7 +24,6 @@ class Contact(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
     phone = Column(String(20), nullable=False, unique=True, index=True)
-    push_name = Column(String(255), nullable=True, comment='Nome do WhatsApp — apenas para logs internos, nunca usado como nome do cliente')
     city = Column(String(100), nullable=True)
     source = Column(
         String(50),
