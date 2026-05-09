@@ -20,8 +20,9 @@ Fluxo de mensagens:
 """
 
 import logging
+import os
 from decimal import Decimal
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Header, Depends
 from datetime import datetime
 
 from app.workers.tasks import enqueue_debounced, send_audio_autoresponse
@@ -34,6 +35,24 @@ from app.company_config import config as company_config
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/webhook", tags=["whatsapp"])
+
+
+# ─────────────────────────────────────────────────────────────
+# Autenticação do webhook por API key
+# ─────────────────────────────────────────────────────────────
+
+def _verify_webhook_api_key(x_api_key: str = Header(...)):
+    """
+    Verifica o header x-api-key contra WEBHOOK_API_KEY do .env.
+    Retorna 403 se ausente ou inválido.
+    """
+    expected = os.environ.get("WEBHOOK_API_KEY", "")
+    if not expected:
+        logger.warning("[Webhook] WEBHOOK_API_KEY não configurado no .env — requisição bloqueada")
+        raise HTTPException(status_code=403, detail="Webhook não configurado")
+    if x_api_key != expected:
+        logger.warning("[Webhook] Tentativa de acesso com API key inválida")
+        raise HTTPException(status_code=403, detail="Forbidden")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -346,7 +365,7 @@ def _handle_payment_proof(phone: str, push_name: str) -> None:
 # Webhook principal
 # ─────────────────────────────────────────────────────────────
 
-@router.post("/whatsapp")
+@router.post("/whatsapp", dependencies=[Depends(_verify_webhook_api_key)])
 async def whatsapp_webhook(request: Request):
     """
     Recebe todos os eventos da Evolution API e roteia conforme o tipo.
