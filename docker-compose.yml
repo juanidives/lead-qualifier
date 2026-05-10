@@ -97,7 +97,33 @@ services:
     volumes:
       - redis_data:/data
 
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: evolution
+      DB_POSTGRESDB_PASSWORD: evolution
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: "admin"
+      N8N_BASIC_AUTH_PASSWORD: "trocar123"
+      GENERIC_TIMEZONE: "America/Sao_Paulo"
+      TZ: "America/Sao_Paulo"
+      WEBHOOK_URL: "https://n8n.kailor.com.br"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - n8n_data:/home/node/.n8n
+
 volumes:
+  n8n_data:
   postgres_data:
   evolution_instances:
   redis_data:
