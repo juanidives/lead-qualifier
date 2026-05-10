@@ -16,8 +16,84 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models import CustomerOrder, Contact
 from app.services.evolution_service import send_text_message
+from app.company_config import config as client_config
 
 logger = logging.getLogger(__name__)
+
+
+# ─────────────────────────────────────────────────────────────
+# Efectivo — notificação ao dono quando pedido é confirmado
+# ─────────────────────────────────────────────────────────────
+
+def handle_efectivo_order(contact_id: int, order_id: int) -> bool:
+    """
+    Processa pedido pago em efectivo:
+      a) Atualiza status do pedido para 'payment_confirmed'
+      b) Envia notificação a todos os owner_phones configurados
+
+    Chamado por agent_tools.confirmar_pedido quando payment_method='efectivo'.
+
+    Retorna True se processado com sucesso.
+    """
+    # Obtém phones dos donos da config
+    owner_phones = client_config.get("owner_phone", [])
+    if isinstance(owner_phones, str):
+        owner_phones = [owner_phones] if owner_phones else []
+
+    if not owner_phones:
+        logger.warning("[EfectivoOrder] Nenhum owner_phone configurado — notificação não enviada")
+        return False
+
+    db = SessionLocal()
+    try:
+        contact = db.query(Contact).filter(Contact.id == contact_id).first()
+        order   = db.query(CustomerOrder).filter(CustomerOrder.id == order_id).first()
+
+        if not contact or not order:
+            logger.error(f"[EfectivoOrder] Contato ou pedido não encontrado: contact_id={contact_id}, order_id={order_id}")
+            return False
+
+        # Atualiza status para payment_confirmed
+        order.status = 'payment_confirmed'
+        db.commit()
+        logger.info(f"[EfectivoOrder] Pedido #{order.id} → payment_confirmed (efectivo)")
+
+        # Formata itens do pedido
+        items_lines = "\n".join([
+            f"{item.get('product_name', 'Producto')} x{item.get('quantity', 1)} = ${int(item.get('subtotal', 0)):,}".replace(",", ".")
+            for item in (order.items or [])
+        ])
+        total_fmt = f"${int(float(order.total)):,}".replace(",", ".")
+
+        msg = (
+            f"🛒 NUEVO PEDIDO - EFECTIVO\n"
+            f"Cliente: {contact.name} ({contact.phone})\n"
+            f"─────────────────\n"
+            f"{items_lines}\n"
+            f"─────────────────\n"
+            f"Total: {total_fmt}\n"
+            f"Retiro en local 📦\n"
+            f"─────────────────\n"
+            f"Respondé: LISTO {contact.name}\n"
+            f"cuando esté preparado para que pase a buscar"
+        )
+
+        for phone in owner_phones:
+            try:
+                send_text_message(phone=str(phone), text=msg)
+                logger.info(f"[EfectivoOrder] Notificación enviada al dueño {phone}")
+            except Exception as e:
+                logger.error(f"[EfectivoOrder] Erro ao notificar dueño {phone}: {e}")
+
+        return True
+
+    except Exception:
+        logger.exception(f"[EfectivoOrder] Erro ao processar pedido efectivo order_id={order_id}")
+        db.rollback()
+        return False
+
+    finally:
+        db.close()
 
 
 # ─────────────────────────────────────────────────────────────

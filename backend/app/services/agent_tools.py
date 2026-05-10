@@ -25,6 +25,7 @@ from agno.run import RunContext
 
 from app.database import SessionLocal
 from app.models import Contact, CustomerOrder
+from app.company_config import config as client_config
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +35,21 @@ def confirmar_pedido(
     items_json: str,
     total: float,
     address: str,
+    payment_method: str = "transferencia",
 ) -> str:
     """
     Guarda el pedido del cliente en la base de datos cuando confirma la compra.
 
-    Llamá esta función UNA SOLA VEZ, cuando el cliente haya confirmado TODOS
-    los productos, cantidades y la forma de entrega, ANTES de enviar el alias
-    para la transferencia.
+    Llamá esta función UNA SOLA VEZ cuando el cliente confirme todos los
+    productos, cantidades y la forma de entrega. El comportamiento varía
+    según la forma de pago:
+
+    - payment_method="transferencia" (default): pedido queda en estado
+      'pending', esperando el comprobante. Llamá ANTES de enviar el alias.
+      La función devuelve el alias de pago para que lo comuniques al cliente.
+    - payment_method="efectivo": notifica al dueño automáticamente y devuelve
+      mensaje de confirmación para enviar al cliente. Llamá SOLO cuando
+      el cliente confirme explícitamente.
 
     Args:
         items_json: JSON string con la lista de productos del pedido.
@@ -50,11 +59,14 @@ def confirmar_pedido(
                     '[{"product_name":"Fernet 750ml - Branca","quantity":1,"price":16000,"subtotal":16000},{"product_name":"Coca-Cola 2.25L","quantity":2,"price":4500,"subtotal":9000}]'
         total:      Monto total del pedido en ARS. Ejemplo: 25000
         address:    Dirección de entrega completa, o la palabra "retiro" si el
-                    cliente pasa a buscar al depósito.
+                    cliente pasa a buscar al local.
                     Ejemplo: "Av. Sarmiento 400" o "retiro"
+        payment_method: Forma de pago. Valores válidos: "transferencia" o "efectivo".
 
     Returns:
-        Confirmación interna (no la mostrés ni la menciones al cliente).
+        Para transferencia: el alias de pago para comunicar al cliente.
+        Para efectivo: mensaje de confirmación para enviar al cliente.
+        En caso de error: string que empieza con "error:".
     """
     phone = run_context.session_id
 
@@ -70,6 +82,8 @@ def confirmar_pedido(
     except (json.JSONDecodeError, ValueError) as e:
         logger.error(f"[AgentTool] confirmar_pedido: items_json inválido — {e}")
         return f"error: items_json inválido ({e})"
+
+    is_efectivo = payment_method.lower().strip() == "efectivo"
 
     db = SessionLocal()
     try:
@@ -94,7 +108,7 @@ def confirmar_pedido(
             old.status = 'cancelled'
             logger.info(f"[AgentTool] Pedido #{old.id} anterior → cancelado (reemplazado)")
 
-        # ── 3. Crea el nuevo pedido ───────────────────────────────────
+        # ── 3. Crea el nuevo pedido siempre con status 'pending' ──────
         order = CustomerOrder(
             contact_id=contact.id,
             items=items,
@@ -108,11 +122,30 @@ def confirmar_pedido(
 
         logger.info(
             f"[AgentTool] Pedido #{order.id} guardado — "
-            f"contacto: {contact.name} | items: {len(items)} | "
+            f"contacto: {contact.name} | pago: {payment_method} | "
+            f"status: pending | items: {len(items)} | "
             f"total: ${total} | dirección: {address}"
         )
 
-        return f"ok: pedido #{order.id} guardado"
+        # ── 4. Flujo según forma de pago ──────────────────────────────
+
+        if is_efectivo:
+            # Notifica al dueño y actualiza status a 'payment_confirmed'
+            # Import lazy para evitar circular imports
+            from app.services.order_commands_service import handle_efectivo_order
+            handle_efectivo_order(contact_id=contact.id, order_id=order.id)
+
+            return (
+                "¡Perfecto! Pedido confirmado ✅ "
+                "Lo estamos preparando para que lo pases a buscar. "
+                "Te avisamos cuando esté listo 🙌"
+            )
+
+        else:
+            # Transferencia: devuelve el alias para que el agente lo comunique
+            payment_alias = client_config.get("payment_alias", "").strip()
+            alias_text = f"*{payment_alias}*" if payment_alias else "[alias no configurado]"
+            return f"ok: pedido #{order.id} guardado. Alias para transferencia: {alias_text}"
 
     except Exception:
         logger.exception(f"[AgentTool] Error al guardar pedido para {phone}")
