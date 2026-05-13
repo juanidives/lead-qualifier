@@ -1,0 +1,38 @@
+# Normalização de line endings.
+# Resolve diffs fantasmas CRLF↔LF entre Windows (local) e Linux (servidor Hetzner).
+#
+# `* text=auto eol=lf` significa:
+#   - Git detecta automaticamente se o arquivo é texto.
+#   - No commit: sempre armazena como LF.
+#   - No checkout: depende do SO (Windows pode receber CRLF, Linux recebe LF).
+#
+# Resultado: tanto faz quem editou e em qual SO, o repo fica consistente.
+
+* text=auto eol=lf
+
+# ── Scripts que precisam manter line endings específicos ──────────────
+# Scripts shell rodam no servidor Linux — sempre LF.
+*.sh   text eol=lf
+
+# Scripts Windows precisam de CRLF — PowerShell, batch, cmd.
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# ── Binários — git não tenta normalizar nem mostrar diff de texto ─────
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.pdf      binary
+*.db       binary
+*.sqlite   binary
+*.sqlite3  binary
+*.zip      binary
+*.tar      binary
+*.gz       binary
+*.woff     binary
+*.woff2    binary
+*.ttf      binary
+*.eot      binary
