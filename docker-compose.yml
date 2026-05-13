@@ -9,7 +9,7 @@ services:
     container_name: postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: evolution
       POSTGRES_PASSWORD: evolution
@@ -81,6 +81,8 @@ services:
     depends_on:
       - redis
       - evolution-api
+    volumes:
+      - /opt/lead-qualifier/clients:/clients
     profiles:
       - production  # só sobe com: docker compose --profile production up
 
@@ -93,7 +95,7 @@ services:
     container_name: redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
 
@@ -121,6 +123,31 @@ services:
         condition: service_healthy
     volumes:
       - n8n_data:/home/node/.n8n
+
+  fastapi:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fastapi
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      REDIS_URL: "redis://redis:6379/0"
+      EVOLUTION_API_URL: "http://evolution-api:8080"
+    volumes:
+      - /opt/lead-qualifier/clients:/clients
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      evolution-api:
+        condition: service_started
+    profiles:
+      - production
 
 volumes:
   n8n_data:
